@@ -25,8 +25,7 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          context: ./docker/
-          file: ./Dockerfile
+          context: ./docker
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/k8s-ingress-admission:latest
 
