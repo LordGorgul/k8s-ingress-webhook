@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 
 app.post('/validateingress', (req, res) => {
 	let allowed = true;
-	let msg = "Ingress Rule is valid";
+	let errors = [''];
 	let responseCode = 200;
 	let ingress = req.body.request.object;
 	let namespace = ingress.metadata.namespace;
@@ -28,20 +28,20 @@ app.post('/validateingress', (req, res) => {
 	console.log(ingress);
 	
 	if (namespace != configuration.metadata.namespace){
-		console.error("Namespace mismatch! " + namespace + " != " + configuration.metadata.namespace);
+		console.error(`Namespace mismatch! ${namespace} !=  ${configuration.metadata.namespace}`);
 		allowed = false;
 	}
 
 	if (configuration.metadata.annotations['haproxy-ingress.github.io/secure-backends'] != "true"){
-		msg = 'The annotation haproxy-ingress.github.io/secure-backends must be set to "true"';
-		console.log(msg);
+		errors.push('The annotation haproxy-ingress.github.io/secure-backends must be set to "true"');
+		console.log(errors[errors.length-1]);
 		allowed = false;
 	}
 
 	for (var rule of configuration.spec.rules[0].http.paths){
 		if (!rule.path.startsWith("/" + nsNoPrefix)){
-			msg = "Path needs to start with /" + nsNoPrefix;
-			console.log(msg);
+			errors.push(`Path ${rule.path} needs to start with /${nsNoPrefix}`);
+			console.log(errors[errors.length-1]);
 			allowed = false;
 		}
 	}
@@ -54,7 +54,7 @@ app.post('/validateingress', (req, res) => {
 		  allowed: allowed,
 		  status: {
 			  code: responseCode,
-			  message: msg
+			  message: errors.join('\n')
 		  }
 		}
 	}
