@@ -4,8 +4,7 @@ USER node
 WORKDIR /home/node
 
 COPY index.js .
-COPY tls.key .
-COPY tls.crt .
+COPY package.json .
 
 RUN npm install
 
