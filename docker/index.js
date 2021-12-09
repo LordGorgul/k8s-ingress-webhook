@@ -13,17 +13,15 @@ const options = {key: privateKey, cert: certificate};
 
 const app = express();
 
-try {
-	const validation = require('/etc/config/validation.js')
-}
-catch (ex){
-	console.error(ex)
-}
-
-
 app.use(bodyParser.json());
 
 app.post('/validate', (req, res) => {
+	try {
+		var validation = require('/etc/config/validation.js')
+	}
+	catch (ex){
+		console.error(ex)
+	}
 	let response = {
 		apiVersion: 'admission.k8s.io/v1',
 		kind: 'AdmissionReview',
