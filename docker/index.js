@@ -12,55 +12,40 @@ const certificate = fs.readFileSync('/etc/certs/tls.crt').toString();
 const options = {key: privateKey, cert: certificate};
 
 const app = express();
+
+try {
+	const validation = require('/etc/config/validation.js')
+}
+catch (ex){
+	console.error(ex)
+}
+
+
 app.use(bodyParser.json());
 
-app.post('/validateingress', (req, res) => {
-	let allowed = true;
-	let errors = [''];
-	let responseCode = 200;
-	let ingress = req.body.request.object;
-	let namespace = ingress.metadata.namespace;
-	let nsNoPrefix = namespace.match(/(?<=ns-).+/);
-	let configuration = JSON.parse(ingress.metadata.annotations['kubectl.kubernetes.io/last-applied-configuration']);
-
-	console.log("New Request:");
-	console.log(req.body);
-	console.log(ingress);
-	
-	if (namespace != configuration.metadata.namespace){
-		console.error(`Namespace mismatch! ${namespace} !=  ${configuration.metadata.namespace}`);
-		allowed = false;
-	}
-
-	if (configuration.metadata.annotations['haproxy-ingress.github.io/secure-backends'] != "true"){
-		errors.push('The annotation haproxy-ingress.github.io/secure-backends must be set to "true"');
-		console.log(errors[errors.length-1]);
-		allowed = false;
-	}
-
-	for (var rule of configuration.spec.rules[0].http.paths){
-		if (!rule.path.startsWith("/" + nsNoPrefix)){
-			errors.push(`Path ${rule.path} needs to start with /${nsNoPrefix}`);
-			console.log(errors[errors.length-1]);
-			allowed = false;
-		}
-	}
-
+app.post('/validate', (req, res) => {
 	let response = {
 		apiVersion: 'admission.k8s.io/v1',
 		kind: 'AdmissionReview',
 		response:{
 		  uid: req.body.request.uid,
-		  allowed: allowed,
+		  allowed: true,
 		  status: {
-			  code: responseCode,
-			  message: errors.join('\n')
-		  }
+			  code: 200,
+			  message: 'No validation method detected'
+			}
 		}
 	}
 
-	console.log(response)
-	res.send(response)
+	console.log("New Request:");
+	console.log(req.body);
+	console.log(req.body.request.object);
+
+	if (validation.validate) {
+		response = validation.validate(req);
+	}
+	console.log(response);
+	res.send(response);
 })
 
 
